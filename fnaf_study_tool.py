@@ -1,29 +1,53 @@
-# FNAF Study Tool
+```
+import numpy as np
+import cv2
 
-A desktop study tool built with Python and OpenCV that keeps you focused by detecting when you look away from the screen and showing a Freddy Fazbear jumpscare.
+jumpscare_img = cv2.imread('fnaf.jpg')
+jumpscare_img = cv2.resize(jumpscare_img, (640, 480))
 
-## How it works:
-- Webcam monitors your face and eyes in real-time
-- If your eyes aren't detected for 2+ seconds, Freddy appears
-- Look back at the screen and Freddy goes away
-- Keeps you focused while studying!
+if jumpscare_img is None:
+    print("FREDDY IMAGE NOT FOUND!")
+else:
+    print("Freddy loaded!")
 
-## Technologies used:
-- Python
-- OpenCV (computer vision)
-- Haar Cascade Classifiers (face and eye detection)
+cap = cv2.VideoCapture(0)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
-## How to run:
-1. Install dependencies: `pip install opencv-python numpy`
-2. Make sure `fnaf.jpg` is in the same folder
-3. Run `python main.py`
-4. Press 'q' to quit
+jumpscare_active = False
 
-## What I learned:
-- Computer vision with OpenCV
-- Real-time face and eye detection
-- Video capture and frame processing
-- Timer-based event triggering
-- Working with image processing pipelines
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-Created: April 2026
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 5)
+
+        roi_gray = gray[y:y + h, x:x + w]
+        roi_color = frame[y:y + h, x:x + w]
+
+        eyes = eye_cascade.detectMultiScale(roi_gray, 1.3, 5)
+
+        for (ex, ey, ew, eh) in eyes:
+            cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 5)
+
+        if len(eyes) == 0:
+            jumpscare_active = True
+        else:
+            jumpscare_active = False
+
+    if jumpscare_active:
+        cv2.imshow('frame', jumpscare_img)
+    else:
+        cv2.imshow('frame', frame)
+
+    if cv2.waitKey(1) == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
